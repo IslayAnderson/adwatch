@@ -49,6 +49,7 @@
                         <div class="absolute inset-y-0 w-0.5 bg-white" style="left:80%"></div>
                     </div>
                     <p id="meterStatus" class="text-xs text-red-100 mt-1"></p>
+                    <button id="meterTap" type="button" class="hidden mt-2 bg-white text-red-700 px-4 py-1.5 rounded-lg text-sm font-bold">🎤 Tap to start listening</button>
                 </div>
                 <button id="continueBtn" type="button" class="mt-3 sm:mt-4 bg-white text-red-700 hover:bg-red-50 px-6 py-2.5 rounded-lg font-bold disabled:opacity-70 disabled:cursor-wait"></button>
             </div>
@@ -288,9 +289,27 @@ $('continueBtn').addEventListener('click', async () => {
 
 // "Yell the brand": a live loudness meter from the microphone. Volume only, no speech recognition;
 // the audio never leaves the browser and the mic is released as soon as the check clears.
-const SHOUT_RMS = 0.1;   // RMS level that counts as yelling (normal speech is roughly 0.02-0.08)
+//
+// The pass mark eases off the longer you try (phone mics, especially iPhones with their always-on gain
+// control, read much quieter than laptops): it starts at SHOUT_RMS and halves towards SHOUT_FLOOR every
+// SHOUT_EASE_MS. The floor is still well above a quiet room (roughly 0.001-0.005), so silence can't pass.
+const SHOUT_RMS = 0.05;       // starting pass mark (RMS 0-1; normal speech is roughly 0.02-0.08)
+const SHOUT_FLOOR = 0.012;    // the easiest it ever gets
+const SHOUT_EASE_MS = 6000;   // half-life of the easing
 const SHOUT_HOLD_MS = 300;
 let shout = null;
+
+// iOS Safari only lets audio processing run if the AudioContext was started by a tap. Create/resume it
+// on the "Start the party" tap (and any tap on the alert), then reuse it for every yell check.
+let audioCtx = null;
+function unlockAudio() {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    audioCtx ??= new Ctx();
+    if (audioCtx.state !== 'running') audioCtx.resume().catch(() => {});
+    return audioCtx;
+}
+$('alertBox').addEventListener('pointerdown', unlockAudio);
 
 async function listenForShout() {
     $('meterFill').style.width = '0%';
@@ -306,21 +325,34 @@ async function listenForShout() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
         if (activeAlert !== ALERTS.shout) return stream.getTracks().forEach(t => t.stop());
-        const ctx = new AudioContext();
-        await ctx.resume();
+        const ctx = unlockAudio();
+        if (!ctx) throw new DOMException('Web Audio not supported', 'NotSupportedError');
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 1024;
-        ctx.createMediaStreamSource(stream).connect(analyser);
+        const source = ctx.createMediaStreamSource(stream);
+        source.connect(analyser);
         const buf = new Float32Array(analyser.fftSize);
-        let loudFor = 0, last = performance.now();
-        shout = { stream, ctx, timer: null };
+        const started = performance.now();
+        let loudFor = 0, last = started;
+        shout = { stream, source, timer: null };
 
         shout.timer = setInterval(() => {
             const now = performance.now();
+            if (ctx.state !== 'running') {
+                // iOS kept the audio suspended: it needs a tap from the viewer.
+                $('meterStatus').textContent = 'Tap here to start listening';
+                $('meterTap').classList.remove('hidden');
+                last = now;
+                return;
+            }
+            $('meterTap').classList.add('hidden');
             analyser.getFloatTimeDomainData(buf);
             const rms = Math.sqrt(buf.reduce((sum, v) => sum + v * v, 0) / buf.length);
-            const level = rms / SHOUT_RMS; // 1 = threshold, drawn at 80% of the bar
+            const passMark = SHOUT_FLOOR + (SHOUT_RMS - SHOUT_FLOOR) * Math.pow(0.5, (now - started) / SHOUT_EASE_MS);
+            const level = rms / passMark; // 1 = pass mark, drawn at 80% of the bar
             $('meterFill').style.width = Math.min(level * 80, 100) + '%';
+            if (level < 1) $('meterStatus').textContent = now - started > 5000 ? 'Getting easier… keep going!' : 'Louder! Get past the line.';
+
             loudFor = level >= 1 ? loudFor + (now - last) : Math.max(0, loudFor - (now - last) / 2);
             last = now;
             if (loudFor >= SHOUT_HOLD_MS) heardShout();
@@ -336,9 +368,10 @@ async function listenForShout() {
 function stopListening() {
     if (!shout) return;
     clearInterval(shout.timer);
+    shout.source.disconnect();
     shout.stream.getTracks().forEach(t => t.stop());
-    shout.ctx.close();
-    shout = null;
+    $('meterTap').classList.add('hidden');
+    shout = null; // the AudioContext itself is kept for the next check (iOS would need another tap)
 }
 
 async function heardShout() {
@@ -474,6 +507,7 @@ async function sawSmile() {
 }
 
 $('startBtn').addEventListener('click', async () => {
+    unlockAudio(); // a tap: the one moment iOS will allow audio processing to start
     if (!Webcam.on()) await Webcam.enable();
     if (!Webcam.on()) {
         $('label').textContent = 'The party needs your webcam on';
