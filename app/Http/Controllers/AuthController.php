@@ -22,6 +22,12 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Those credentials do not match.'])->onlyInput('email');
         }
 
+        if (Auth::user()->isSuspended()) {
+            Auth::logout();
+
+            return back()->withErrors(['email' => 'This account has been suspended.'])->onlyInput('email');
+        }
+
         $request->session()->regenerate();
         app(Analytics::class)->event('login', ['method' => 'email']);
 

@@ -29,8 +29,7 @@ Artisan::command('user:password {email} {password?}', function (string $email, ?
         return 1;
     }
 
-    $user->forceFill(['password' => $password, 'remember_token' => null])->save(); // hashed by the model cast
-    App\Models\User::query()->getConnection()->table('sessions')->where('user_id', $user->id)->delete();
+    $user->changePassword($password);
 
     $this->info("Password changed for {$user->email}. Existing logins for this account were signed out.");
 })->purpose('Set a user\'s password (hashed). Omit the password to be prompted for it.');

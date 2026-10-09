@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 
 #[Fillable(['name', 'email', 'password', 'is_admin'])]
 #[Hidden(['password', 'remember_token'])]
@@ -29,7 +30,26 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'suspended_at' => 'datetime',
         ];
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->suspended_at !== null;
+    }
+
+    /** Set a new password and end every existing login (sessions and "remember me"). */
+    public function changePassword(string $password): void
+    {
+        $this->forceFill(['password' => $password, 'remember_token' => null])->save(); // hashed by the cast
+        $this->signOutEverywhere();
+    }
+
+    public function signOutEverywhere(): void
+    {
+        $this->forceFill(['remember_token' => null])->save();
+        DB::table('sessions')->where('user_id', $this->id)->delete();
     }
 
     public function adViews(): HasMany

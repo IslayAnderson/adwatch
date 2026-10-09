@@ -1,6 +1,7 @@
 @extends('layouts.app', ['title' => 'Admin'])
 @use('App\Support\Money')
 @section('content')
+@include('admin._nav')
 <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold">Platform admin</h1>
     <form method="POST" action="{{ route('admin.escrow.release-due') }}">@csrf
@@ -27,7 +28,7 @@
 <div class="bg-white border border-slate-200 rounded-xl">
 @forelse ($withdrawals as $w)
     <div class="flex items-center gap-4 p-3 border-b border-slate-100 last:border-0 text-sm">
-        <span class="flex-1">{{ $w->user->email }} · {{ $w->method }} → {{ $w->destination }}</span>
+        <span class="flex-1"><a href="{{ route('admin.users.show', $w->user) }}" class="text-emerald-700 hover:underline">{{ $w->user->email }}</a> · {{ $w->method }} → {{ $w->destination }}</span>
         <strong>{{ Money::usd($w->amount_micros) }}</strong>
         @foreach (['paid' => 'bg-emerald-600', 'rejected' => 'bg-red-600'] as $s => $cls)
             <form method="POST" action="{{ route('admin.withdrawals.process', $w) }}">@csrf
@@ -48,7 +49,7 @@
     <tbody>
     @forelse ($escrow as $e)
         <tr class="border-t border-slate-100">
-            <td class="p-3">{{ $e->user->email }}</td>
+            <td class="p-3"><a href="{{ route('admin.users.show', $e->user) }}" class="text-emerald-700 hover:underline">{{ $e->user->email }}</a></td>
             <td class="p-3">{{ $e->adView->ad->advertiser }}</td>
             <td class="p-3 text-right">{{ Money::precise($e->gross_micros) }}</td>
             <td class="p-3 text-right">{{ Money::precise($e->user_micros) }}</td>
@@ -72,7 +73,7 @@
 <h2 class="text-lg font-semibold mt-10 mb-3">Recently rejected views</h2>
 <div class="bg-white border border-slate-200 rounded-xl text-sm">
     @foreach ($rejected as $r)
-        <div class="p-3 border-b border-slate-100 last:border-0">{{ $r->user->email }} · {{ $r->ad->advertiser }} — <span class="text-red-600">{{ $r->reject_reason }}</span></div>
+        <div class="p-3 border-b border-slate-100 last:border-0"><a href="{{ route('admin.users.show', $r->user) }}" class="text-emerald-700 hover:underline">{{ $r->user->email }}</a> · {{ $r->ad->advertiser }} — <span class="text-red-600">{{ $r->reject_reason }}</span></div>
     @endforeach
 </div>
 @endif

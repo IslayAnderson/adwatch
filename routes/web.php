@@ -7,7 +7,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\WatchPartyController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\EnsureNotSuspended;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -19,7 +21,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', EnsureNotSuspended::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
@@ -45,5 +47,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/ads', [AdminController::class, 'storeAd'])->name('ads.store');
         Route::post('/ads/{ad}/toggle', [AdminController::class, 'toggleAd'])->name('ads.toggle');
         Route::post('/categories/{category}', [AdminController::class, 'updateCategory'])->name('categories.update');
+
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');
+        Route::post('/users/{user}/admin', [AdminUserController::class, 'toggleAdmin'])->name('users.admin');
+        Route::post('/users/{user}/suspend', [AdminUserController::class, 'toggleSuspended'])->name('users.suspend');
+        Route::post('/users/{user}/password', [AdminUserController::class, 'password'])->name('users.password');
+        Route::post('/users/{user}/sign-out', [AdminUserController::class, 'signOut'])->name('users.sign-out');
+        Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
     });
 });
