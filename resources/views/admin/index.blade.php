@@ -24,6 +24,17 @@
     <div class="bg-white border border-slate-200 rounded-xl p-4"><div class="text-xs text-slate-500">Rejected views</div><div class="text-xl font-bold mt-1">{{ number_format($stats['rejected_views']) }}</div></div>
 </div>
 
+<h2 class="text-lg font-semibold mt-10 mb-3">Settings</h2>
+<form method="POST" action="{{ route('admin.settings.update') }}" class="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap items-end gap-4 text-sm">@csrf
+    <label class="flex flex-col gap-1">
+        <span class="font-semibold">Daily view limit per user</span>
+        <span class="text-xs text-slate-500">Ads each user can complete per day (resets at midnight). 0 = unlimited.</span>
+        <input name="daily_view_cap" type="number" min="0" max="100000" step="1" value="{{ old('daily_view_cap', $dailyViewCap) }}" class="w-32 border rounded px-3 py-1.5 mt-1">
+    </label>
+    <button class="bg-slate-800 text-white px-4 py-2 rounded-lg">Save</button>
+    <span class="text-xs text-slate-500 self-center">Currently: <strong>{{ $dailyViewCap > 0 ? number_format($dailyViewCap).' ads/day' : 'unlimited' }}</strong></span>
+</form>
+
 <h2 class="text-lg font-semibold mt-10 mb-3">Pending withdrawals</h2>
 <div class="bg-white border border-slate-200 rounded-xl">
 @forelse ($withdrawals as $w)

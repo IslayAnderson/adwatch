@@ -9,6 +9,7 @@ use App\Models\AdView;
 use App\Models\Earning;
 use App\Models\Withdrawal;
 use App\Services\EscrowService;
+use App\Support\Settings;
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
@@ -19,6 +20,7 @@ class AdminController extends Controller
             ->where('status', '!=', Earning::REVERSED)->sum($col);
 
         return view('admin.index', [
+            'dailyViewCap' => Settings::dailyViewCap(),
             'stats' => [
                 'gross' => $sum('gross_micros'),
                 'users_share' => $sum('user_micros'),
@@ -117,5 +119,15 @@ class AdminController extends Controller
         ]);
 
         return back()->with('status', "{$category->name} CPM updated.");
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $data = $request->validate(['daily_view_cap' => 'required|integer|min:0|max:100000']);
+        Settings::set('daily_view_cap', (int) $data['daily_view_cap']);
+
+        return back()->with('status', $data['daily_view_cap'] > 0
+            ? "Daily limit set to {$data['daily_view_cap']} ads per user."
+            : 'Daily limit removed: users can watch unlimited ads.');
     }
 }

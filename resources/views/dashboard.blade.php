@@ -7,7 +7,7 @@
 </div>
 @include('partials.balances')
 <div class="grid md:grid-cols-3 gap-4 mt-4 text-sm">
-    <div class="bg-white border border-slate-200 rounded-xl p-4">Ads watched today: <strong>{{ $todayViews }} / {{ config('adwatch.daily_view_cap') }}</strong></div>
+    <div class="bg-white border border-slate-200 rounded-xl p-4">Ads watched today: <strong>{{ $todayViews }}@if (\App\Support\Settings::dailyViewCap() > 0) / {{ \App\Support\Settings::dailyViewCap() }}@endif</strong></div>
     <div class="bg-white border border-slate-200 rounded-xl p-4">Your share: <strong>{{ config('adwatch.user_share') * 100 }}%</strong> of each impression</div>
     <div class="bg-white border border-slate-200 rounded-xl p-4">Next escrow release:
         <strong>{{ $wallet->nextReleaseAt() ? \Illuminate\Support\Carbon::parse($wallet->nextReleaseAt())->diffForHumans() : '—' }}</strong></div>

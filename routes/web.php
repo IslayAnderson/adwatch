@@ -47,6 +47,7 @@ Route::middleware(['auth', EnsureNotSuspended::class])->group(function () {
         Route::post('/ads', [AdminController::class, 'storeAd'])->name('ads.store');
         Route::post('/ads/{ad}/toggle', [AdminController::class, 'toggleAd'])->name('ads.toggle');
         Route::post('/categories/{category}', [AdminController::class, 'updateCategory'])->name('categories.update');
+        Route::post('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
 
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
         Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');

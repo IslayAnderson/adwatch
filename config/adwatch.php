@@ -12,7 +12,7 @@ return [
     'min_watch_seconds' => 30,
 
     // Basic abuse limits.
-    'daily_view_cap' => 50,
+    'daily_view_cap' => 50, // default; admins can change it at /admin (stored in the settings table, 0 = unlimited)
     'same_ad_cooldown_hours' => 24,
 
     // Minimum withdrawal, in USD.

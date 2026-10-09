@@ -59,7 +59,7 @@ The catalogue has **about 18,900 real YouTube ads from about 1,190 brands** acro
 6. **Release**: `php artisan escrow:release` (scheduled hourly) or the admin button moves due earnings to `released`. Admins can also release early or **reverse** (claw back) an earning.
 7. **Withdraw**: users can request a payout of released funds (minimum $11.27). The Available balance is shown in whole cents, always rounded down. Admins mark requests paid or rejected, all simulated.
 
-Abuse limits are a 50-view daily cap, a 24h cooldown per ad, one active view at a time, and single-use view tokens.
+Abuse limits are a daily cap (50 completed views per user by default; admins change it under **Settings** at `/admin`, 0 = unlimited), a 24h cooldown per ad, one active view at a time, and single-use view tokens.
 
 Settings live in `config/adwatch.php`. The core logic is in `app/Services/` (`PayoutCalculator`, `AdViewService`, `EscrowService`, `Wallet`).
 

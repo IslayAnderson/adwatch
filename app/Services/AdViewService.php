@@ -6,6 +6,7 @@ use App\Models\Ad;
 use App\Models\AdView;
 use App\Models\Earning;
 use App\Models\User;
+use App\Support\Settings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -50,7 +51,8 @@ class AdViewService
 
         $todayCount = $user->adViews()->where('status', 'completed')
             ->where('completed_at', '>=', now()->startOfDay())->count();
-        if ($todayCount >= config('adwatch.daily_view_cap')) {
+        $cap = Settings::dailyViewCap(); // 0 = unlimited
+        if ($cap > 0 && $todayCount >= $cap) {
             throw ValidationException::withMessages(['ad' => 'Daily limit reached. Come back tomorrow.']);
         }
 

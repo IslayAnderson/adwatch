@@ -228,4 +228,29 @@ class AdEscrowFlowTest extends TestCase
         $this->get(route('admin.index', ['ads_q' => 'greggs']))->assertSee('Sausage roll')->assertSee('(1 matching)')->assertDontSee('Brand 7 —');
         $this->get(route('admin.index', ['ads_page' => 3]))->assertOk()->assertSee('ads_page=2', false);
     }
+
+    public function test_admin_controls_the_daily_view_limit(): void
+    {
+        $ad = $this->makeAd();
+        $other = Ad::create(['ad_category_id' => $ad->ad_category_id, 'advertiser' => 'Beta', 'title' => 'Spot 2', 'youtube_id' => 'owGykVbfgUE', 'duration_seconds' => 40]);
+        $viewer = User::factory()->create();
+
+        $this->actingAs(User::factory()->create(['is_admin' => true]));
+        $this->get(route('admin.index'))->assertSee('Daily view limit per user')->assertSee('50 ads/day');
+        $this->post(route('admin.settings.update'), ['daily_view_cap' => -1])->assertSessionHasErrors('daily_view_cap');
+        $this->post(route('admin.settings.update'), ['daily_view_cap' => 1])->assertSessionHasNoErrors();
+        $this->assertSame(1, \App\Support\Settings::dailyViewCap());
+
+        // Limit of 1: the first ad completes, the next start is refused.
+        $this->actingAs($viewer)->post(route('ads.start', $ad));
+        $this->travel(31)->seconds();
+        $this->post(route('watch.complete', AdView::firstOrFail()), ['watched_seconds' => 31]);
+        $this->post(route('ads.start', $other))->assertSessionHasErrors('ad');
+        $this->get(route('dashboard'))->assertSee('1 / 1');
+
+        // 0 = unlimited.
+        \App\Support\Settings::set('daily_view_cap', 0);
+        $this->post(route('ads.start', $other))->assertSessionHasNoErrors();
+        $this->get(route('dashboard'))->assertDontSee('1 / ');
+    }
 }
