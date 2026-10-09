@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $sum = fn ($col, $status = null) => (int) Earning::when($status, fn ($q) => $q->where('status', $status))
             ->where('status', '!=', Earning::REVERSED)->sum($col);
@@ -35,7 +35,17 @@ class AdminController extends Controller
             'withdrawals' => Withdrawal::with('user')->where('status', 'pending')->oldest()->get(),
             'rejected' => AdView::with('user', 'ad')->where('status', 'rejected')->latest()->limit(10)->get(),
             'categories' => AdCategory::withCount('ads')->orderByDesc('cpm_high_cents')->get(),
-            'ads' => Ad::with('category')->withCount(['views' => fn ($q) => $q->where('status', 'completed')])->orderBy('advertiser')->get(),
+            // Paginated: the catalogue is ~19k ads, far too many to render (and thumbnail) on one page.
+            'ads' => Ad::with('category')
+                ->withCount(['views' => fn ($q) => $q->where('status', 'completed')])
+                ->when($request->query('ads_q'), fn ($q, $term) => $q->where(fn ($w) => $w
+                    ->where('advertiser', 'like', "%{$term}%")
+                    ->orWhere('title', 'like', "%{$term}%")
+                    ->orWhere('youtube_id', $term)))
+                ->latest('id')
+                ->paginate(20, ['*'], 'ads_page')
+                ->withQueryString()
+                ->fragment('inventory'),
         ]);
     }
 

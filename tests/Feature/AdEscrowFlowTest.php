@@ -212,4 +212,20 @@ class AdEscrowFlowTest extends TestCase
             $this->postJson(route('watch-party.next'), ['region' => 'GB'])->assertJsonPath('ad.advertiser', 'Greggs');
         }
     }
+
+    public function test_admin_ad_inventory_is_paginated_and_searchable(): void
+    {
+        $first = $this->makeAd();
+        foreach (range(1, 45) as $i) {
+            Ad::create(['ad_category_id' => $first->ad_category_id, 'advertiser' => "Brand $i", 'title' => "Spot $i", 'youtube_id' => sprintf('id%09d', $i), 'duration_seconds' => 30]);
+        }
+        Ad::create(['ad_category_id' => $first->ad_category_id, 'advertiser' => 'Greggs', 'title' => 'Sausage roll', 'youtube_id' => 'greggs00001', 'duration_seconds' => 30]);
+        $this->actingAs(User::factory()->create(['is_admin' => true]));
+
+        $page = $this->get(route('admin.index'))->assertOk()->assertSee('(47)');
+        $this->assertSame(20, substr_count($page->getContent(), 'i.ytimg.com'));
+
+        $this->get(route('admin.index', ['ads_q' => 'greggs']))->assertSee('Sausage roll')->assertSee('(1 matching)')->assertDontSee('Brand 7 —');
+        $this->get(route('admin.index', ['ads_page' => 3]))->assertOk()->assertSee('ads_page=2', false);
+    }
 }
