@@ -303,7 +303,7 @@
         <div>
             <div class="font-semibold text-slate-200 mb-2">Company</div>
             <ul class="space-y-1">
-                <li><a href="https://blog.islayanderson.co.uk" class="hover:text-white">Read our blogs</a></li>
+                <li><a href="https://blog.islayanderson.co.uk" class="hover:text-white">Blogs</a></li>
                 <li><a href="#" class="hover:text-white">Help</a></li>
                 <li><a href="#" class="hover:text-white">About us</a></li>
                 <li><a href="#" class="hover:text-white">Terms &amp; conditions</a></li>
