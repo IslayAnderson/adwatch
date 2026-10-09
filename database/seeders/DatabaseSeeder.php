@@ -61,9 +61,16 @@ class DatabaseSeeder extends Seeder
         }
 
         $categories = AdCategory::pluck('id', 'name');
-        $rows = [];
+        $now = now()->toDateTimeString(); // one string, not ~19k Carbon objects
+        $seen = [];
+        $batch = [];
+        // Tens of thousands of rows: dedupe on the fly and insert in chunks rather than one model at a time.
         foreach ([...self::ADS, ...$this->harvestedAds()] as [$category, $advertiser, $title, $id, $seconds, $region]) {
-            $rows[$id] ??= [
+            if (isset($seen[$id])) {
+                continue;
+            }
+            $seen[$id] = true;
+            $batch[] = [
                 'ad_category_id' => $categories[$category],
                 'advertiser' => $advertiser,
                 'title' => $title,
@@ -71,13 +78,16 @@ class DatabaseSeeder extends Seeder
                 'duration_seconds' => $seconds,
                 'region' => $region,
                 'active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
+            if (count($batch) === 500) {
+                Ad::insert($batch);
+                $batch = [];
+            }
         }
-        // Thousands of rows: insert in chunks rather than one model at a time.
-        foreach (array_chunk(array_values($rows), 500) as $chunk) {
-            Ad::insert($chunk);
+        if ($batch) {
+            Ad::insert($batch);
         }
 
         User::create(['name' => 'Admin', 'email' => 'admin@adwatch.test', 'password' => 'password', 'is_admin' => true]);
