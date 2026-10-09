@@ -11,12 +11,13 @@ php artisan migrate:fresh --seed
 php artisan serve
 ```
 
-Seeded local test accounts (password `password`):
+The seeder loads the ad categories and the ad catalogue only; it creates no user accounts. Register at `/register`, then make your account an admin:
 
-| Email | Role |
-|---|---|
-| `demo@adwatch.test` | viewer with 40 past views (some released, some in escrow) |
-| `admin@adwatch.test` | platform admin (`/admin`) |
+```bash
+php artisan user:admin you@example.com
+```
+
+`user:admin you@example.com --remove` takes admin rights away again, and `user:password you@example.com` sets a new password.
 
 Run `php artisan test` for the escrow and payout flow tests.
 

@@ -4,9 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Ad;
 use App\Models\AdCategory;
-use App\Models\Earning;
-use App\Models\User;
-use App\Services\PayoutCalculator;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -90,10 +87,6 @@ class DatabaseSeeder extends Seeder
             Ad::insert($batch);
         }
 
-        User::create(['name' => 'Admin', 'email' => 'admin@adwatch.test', 'password' => 'password', 'is_admin' => true]);
-        $demo = User::create(['name' => 'Demo Viewer', 'email' => 'demo@adwatch.test', 'password' => 'password']);
-
-        $this->seedHistory($demo);
     }
 
     /**
@@ -105,38 +98,5 @@ class DatabaseSeeder extends Seeder
         $rows = json_decode(file_get_contents(database_path('data/youtube_ads.json')), true);
 
         return array_map(fn ($a) => [$a['category'], $a['advertiser'], $a['title'], $a['youtube_id'], $a['duration_seconds'], $a['region'] ?? null], $rows);
-    }
-
-    /** Give the demo account some past views: some already released, some still in escrow. */
-    private function seedHistory(User $user): void
-    {
-        $calculator = app(PayoutCalculator::class);
-        $ads = Ad::with('category')->get();
-
-        foreach (range(1, 40) as $i) {
-            $ad = $ads->random();
-            $watchedAt = now()->subHours($i * 7);
-            $view = $user->adViews()->create([
-                'ad_id' => $ad->id,
-                'token' => (string) Str::uuid(),
-                'status' => 'completed',
-                'required_seconds' => $ad->requiredSeconds(),
-                'reported_seconds' => $ad->requiredSeconds() + 3,
-                'started_at' => $watchedAt->copy()->subSeconds(40),
-                'completed_at' => $watchedAt,
-            ]);
-            $releaseAt = $watchedAt->copy()->addDays(config('adwatch.escrow_days'));
-            $released = $releaseAt->isPast();
-
-            Earning::create([
-                'user_id' => $user->id,
-                'ad_view_id' => $view->id,
-                ...$calculator->forAd($ad),
-                'status' => $released ? Earning::RELEASED : Earning::ESCROW,
-                'release_at' => $releaseAt,
-                'released_at' => $released ? $releaseAt : null,
-                'created_at' => $watchedAt,
-            ]);
-        }
     }
 }

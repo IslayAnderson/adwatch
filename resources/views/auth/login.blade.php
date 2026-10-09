@@ -6,6 +6,5 @@
     <input name="email" type="email" value="{{ old('email') }}" placeholder="Email" class="w-full border rounded px-3 py-2" required>
     <input name="password" type="password" placeholder="Password" class="w-full border rounded px-3 py-2" required>
     <button class="w-full bg-emerald-600 text-white rounded py-2 font-semibold">Log in</button>
-    <p class="text-xs text-slate-500">Demo accounts are listed in the project README.</p>
 </form>
 @endsection
