@@ -291,7 +291,7 @@
     <div class="max-w-6xl mx-auto px-4 py-10 grid sm:grid-cols-4 gap-8">
         <div class="sm:col-span-2">
             <div class="font-bold text-emerald-400 text-lg">▶ AdWatch</div>
-            <p class="mt-2 max-w-sm">Get paid to watch ads. This is satire: no ad network is connected and no real money moves.</p>
+{{--            <p class="mt-2 max-w-sm">Get paid to watch ads. This is satire: no ad network is connected and no real money moves.</p>--}}
         </div>
         <div>
             <div class="font-semibold text-slate-200 mb-2">Members</div>

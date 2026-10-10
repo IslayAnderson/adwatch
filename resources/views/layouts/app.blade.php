@@ -30,9 +30,9 @@
         @endauth
     </div>
 </nav>
-<div class="bg-amber-50 border-b border-amber-200 text-amber-800 text-xs text-center py-1">
-    This is satire — no ad network is connected and no real money moves. CPMs are published industry estimates.
-</div>
+{{--<div class="bg-amber-50 border-b border-amber-200 text-amber-800 text-xs text-center py-1">--}}
+{{--    This is satire — no ad network is connected and no real money moves. CPMs are published industry estimates.--}}
+{{--</div>--}}
 @yield('hero')
 <main class="max-w-6xl mx-auto px-4 py-8">
     @if (session('status'))
